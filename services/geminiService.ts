@@ -1,8 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { NewsItem, NewsSource, Topic } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 // Map user-provided feeds to domains for search grounding
 const SOURCE_DOMAINS: Record<string, string[]> = {
   GENERAL: [
@@ -41,6 +39,17 @@ const getDomainsForTopic = (topic: string): string[] => {
 };
 
 export const fetchNewsByTopic = async (topic: string, customSources: string[] = []): Promise<NewsItem[]> => {
+  // CRITICAL FIX: Initialize AI inside the function to prevent top-level crashes
+  // This allows the app to render even if the API Key is missing initially
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    console.error("API Key is missing");
+    throw new Error("API configuration error. Please try again later.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
   const now = new Date();
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const dateStr = twoWeeksAgo.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -59,7 +68,6 @@ export const fetchNewsByTopic = async (topic: string, customSources: string[] = 
   const domainListString = allTargetDomains.join(', ');
 
   // Construct a focused system instruction
-  // OPTIMIZATION: Reduced Briefing to Top 10 and Detailed Articles to Top 5 for faster generation
   const systemInstruction = `
 You are a high-quality news aggregator app called Briefly.
 Your goal is to provide a briefing on the latest events for the topic: "${topic}".

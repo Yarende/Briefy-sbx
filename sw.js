@@ -1,13 +1,14 @@
 
-const CACHE_NAME = 'briefly-news-v2';
+const CACHE_NAME = 'briefly-news-v3';
+// We remove specific file paths because in some preview environments (like Vercel previews),
+// relative paths to static assets like 'icon.svg' or 'manifest.json' might differ or be handled dynamically.
+// We only cache the root and index to ensure the app shell works.
 const urlsToCache = [
   './',
-  './index.html',
-  './manifest.json'
+  './index.html'
 ];
 
 self.addEventListener('install', (event) => {
-  // Perform install steps
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -36,7 +37,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Cache hit - return response
         if (response) {
           return response;
         }
